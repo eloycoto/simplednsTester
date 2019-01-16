@@ -7,9 +7,8 @@ import (
 	"os"
 	"sync"
 	"sync/atomic"
+	"text/tabwriter"
 	"time"
-
-	"github.com/guptarohit/asciigraph"
 )
 
 const (
@@ -71,7 +70,7 @@ func main() {
 			sem <- true
 			start := time.Now()
 			SearchHost(&wg, target)
-			result := int(time.Since(start) / time.Second)
+			result := float32(time.Since(start) / time.Second)
 			lock.Lock()
 			timmings.Add(result)
 			lock.Unlock()
@@ -114,23 +113,28 @@ func (ips *IPsMap) Print() {
 }
 
 type timmingsSlice struct {
-	data []int
+	data []float32
 	lock sync.Mutex
 }
 
-func (t *timmingsSlice) Add(val int) {
+func (t *timmingsSlice) Add(val float32) {
 	t.lock.Lock()
 	t.data = append(t.data, val)
 	t.lock.Unlock()
 }
 
 func (t *timmingsSlice) Print() {
-
-	graphData := []float64{}
+	results := map[float32]int{}
 	for _, v := range t.data {
-		graphData = append(graphData, float64(v))
+		results[v]++
 	}
 
-	graph := asciigraph.Plot(graphData)
-	fmt.Println(graph)
+	w := new(tabwriter.Writer)
+	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
+	fmt.Fprintln(w, "Delay Seconds\tAttempts")
+
+	for k, v := range results {
+		fmt.Fprintf(w, "%v\t%v\n", k, v)
+	}
+	w.Flush()
 }
