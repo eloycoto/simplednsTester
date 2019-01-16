@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math"
 	"net"
 	"os"
 	"sync"
@@ -14,6 +15,7 @@ import (
 const (
 	DefaultmaxConcurrentUpdates = 10
 	DefaultNumberOfQueries      = 100
+	RoundValues                 = 200
 )
 
 var (
@@ -70,7 +72,9 @@ func main() {
 			sem <- true
 			start := time.Now()
 			SearchHost(&wg, target)
-			result := float32(time.Since(start) / time.Second)
+			result := round(
+				float32(time.Since(start)/time.Millisecond),
+				RoundValues)
 			lock.Lock()
 			timmings.Add(result)
 			lock.Unlock()
@@ -137,4 +141,8 @@ func (t *timmingsSlice) Print() {
 		fmt.Fprintf(w, "%v\t%v\n", k, v)
 	}
 	w.Flush()
+}
+
+func round(x, unit float32) float32 {
+	return float32(math.Round(float64(x)/float64(unit)) * float64(unit))
 }
