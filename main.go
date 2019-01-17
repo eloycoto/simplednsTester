@@ -148,5 +148,5 @@ func (t *timmingsSlice) Print(writer io.Writer) {
 }
 
 func round(x, unit float32) float32 {
-	return float32(math.Round(float64(x)/float64(unit)) * float64(unit))
+	return float32(math.Ceil(float64(x)/float64(unit)) * float64(unit))
 }
