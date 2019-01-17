@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"math"
 	"net"
 	"os"
@@ -86,8 +87,12 @@ func main() {
 	fmt.Println("Number Failed: ", NumberFailed)
 	fmt.Println("Number Host Failed: ", NumberHostFailed)
 
-	IPS.Print()
-	timmings.Print()
+	w := new(tabwriter.Writer)
+	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
+
+	IPS.Print(w)
+	timmings.Print(w)
+	w.Flush()
 }
 
 type IPsMap struct {
@@ -108,12 +113,14 @@ func (ips *IPsMap) AddOrIncreaseIP(ip string) int {
 	return value
 }
 
-func (ips *IPsMap) Print() {
+func (ips *IPsMap) Print(writer io.Writer) {
+	fmt.Fprint(writer, "Returned IP\tNumber of responses\n")
 	ips.Range(func(k, v interface{}) bool {
-		fmt.Printf("IP:%s, value: %v \n", k, v)
+		fmt.Fprintf(writer, "%s\t%v\n", k, v)
 		return true
 	})
-	fmt.Println()
+
+	fmt.Fprint(writer, "\n")
 }
 
 type timmingsSlice struct {
@@ -127,20 +134,17 @@ func (t *timmingsSlice) Add(val float32) {
 	t.lock.Unlock()
 }
 
-func (t *timmingsSlice) Print() {
+func (t *timmingsSlice) Print(writer io.Writer) {
 	results := map[float32]int{}
 	for _, v := range t.data {
 		results[v]++
 	}
 
-	w := new(tabwriter.Writer)
-	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
-	fmt.Fprintln(w, "Delay Seconds\tAttempts")
+	fmt.Fprintln(writer, "Delay Millisecond\tAttempts")
 
 	for k, v := range results {
-		fmt.Fprintf(w, "%v\t%v\n", k, v)
+		fmt.Fprintf(writer, "%v\t%v\n", k, v)
 	}
-	w.Flush()
 }
 
 func round(x, unit float32) float32 {
